@@ -64,15 +64,22 @@ const firebaseConfig = {
         navigator.geolocation.getCurrentPosition(async position => {
           const { latitude, longitude } = position.coords;
 
-          const res = await fetch(`https://api.what3words.com/v3/convert-to-3wa?coordinates=${latitude},${longitude}&key=${w3wApiKey}`);
-          const data = await res.json();
-          const words = data.words;
+        const res = await fetch(`https://api.what3words.com/v3/convert-to-3wa?coordinates=${latitude},${longitude}&key=${w3wApiKey}`);
+const data = await res.json();
 
-          const username = user.displayName || user.email;
-          db.ref("users/" + encodeURIComponent(username)).set({
-            location: words,
-            timestamp: Date.now()
-          });
+if (!data.words) {
+  alert("Failed to get What3Words location.");
+  console.error(data); // Optional: see the full error
+  return;
+}
+
+const words = data.words;
+
+const username = user.displayName || user.email;
+db.ref("users/" + encodeURIComponent(username)).set({
+  location: words,
+  timestamp: Date.now()
+});
 
           alert("Location updated: " + words);
         });
