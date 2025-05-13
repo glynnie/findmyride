@@ -2,17 +2,20 @@
 <html lang="en">
 <head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>W3W User Tracker</title>
+  <title>GeoHash User Tracker</title>
   <style>
     body { font-family: Arial; margin: 20px; }
     input, button { font-size: 16px; margin-top: 10px; }
   </style>
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-database-compat.js"></script>
+  <!-- GeoHash library -->
+  <script src="https://cdn.jsdelivr.net/npm/ngeohash@0.6.3/build/ngeohash.min.js"></script>
 </head>
 <body>
-  <h2>W3W User Tracker</h2>
+  <h2>GeoHash User Tracker</h2>
   <button id="login">Sign in with Google</button>
   <div id="userInfo" style="display:none;">
     <p id="status">Signed in as <span id="username"></span></p>
@@ -38,8 +41,6 @@
       measurementId: "G-748KG1MWBB"
     };
 
-    const w3wApiKey = 'P5MKHZPZ';
-
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.database();
@@ -63,35 +64,26 @@
         return;
       }
 
-      navigator.geolocation.getCurrentPosition(async position => {
+      navigator.geolocation.getCurrentPosition(position => {
         const { latitude, longitude } = position.coords;
 
-        try {
-          const res = await fetch(`https://api.what3words.com/v3/convert-to-3wa?coordinates=${latitude},${longitude}&key=${w3wApiKey}`);
-          const data = await res.json();
+        const geohash = ngeohash.encode(latitude, longitude, 8); // 8 chars ≈ ~19m x 19m
 
-          if (!data.words) {
-            console.error("W3W API error:", data);
-            alert("Error: Could not get What3Words location. Check your API key or try again later.");
-            return;
-          }
+        const username = user.displayName || user.email;
 
-          const words = data.words;
-          const username = user.displayName || user.email;
-
-          await db.ref("users/" + encodeURIComponent(username)).set({
-            location: words,
-            timestamp: Date.now()
-          });
-
-          alert("Location updated: ///" + words);
-        } catch (error) {
+        db.ref("users/" + encodeURIComponent(username)).set({
+          location: geohash,
+          timestamp: Date.now()
+        }).then(() => {
+          alert("Location updated: " + geohash);
+        }).catch(error => {
           console.error("Error updating location:", error);
-          alert("An error occurred while updating your location.");
-        }
+          alert("Failed to update location.");
+        });
+
       }, error => {
         console.error("Geolocation error:", error);
-        alert("Could not get your location. Make sure location services are enabled.");
+        alert("Could not get your location.");
       });
     }
 
@@ -103,7 +95,7 @@
         .then(snapshot => {
           const val = snapshot.val();
           if (val) {
-            document.getElementById("result").textContent = `///${val.location}`;
+            document.getElementById("result").textContent = `GeoHash: ${val.location}`;
           } else {
             document.getElementById("result").textContent = "User not found.";
           }
