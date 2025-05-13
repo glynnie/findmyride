@@ -27,18 +27,16 @@
   <p id="result"></p>
 
   <script>
-
-const firebaseConfig = {
-  apiKey: "AIzaSyCfgD20vWPe0shM49zlCG3xw7q0vmuLgVA",
-  authDomain: "findmyrideuk.firebaseapp.com",
-  databaseURL: "https://findmyrideuk-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "findmyrideuk",
-  storageBucket: "findmyrideuk.firebasestorage.app",
-  messagingSenderId: "1068813229552",
-  appId: "1:1068813229552:web:ce7dae77705669e7349135",
-  measurementId: "G-748KG1MWBB"
-};
-
+    const firebaseConfig = {
+      apiKey: "AIzaSyCfgD20vWPe0shM49zlCG3xw7q0vmuLgVA",
+      authDomain: "findmyrideuk.firebaseapp.com",
+      databaseURL: "https://findmyrideuk-default-rtdb.europe-west1.firebasedatabase.app",
+      projectId: "findmyrideuk",
+      storageBucket: "findmyrideuk.appspot.com",
+      messagingSenderId: "1068813229552",
+      appId: "1:1068813229552:web:ce7dae77705669e7349135",
+      measurementId: "G-748KG1MWBB"
+    };
 
     const w3wApiKey = 'P5MKHZPZ';
 
@@ -60,44 +58,60 @@ const firebaseConfig = {
     });
 
     async function updateLocation(user) {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(async position => {
-          const { latitude, longitude } = position.coords;
-
-        const res = await fetch(`https://api.what3words.com/v3/convert-to-3wa?coordinates=${latitude},${longitude}&key=${w3wApiKey}`);
-const data = await res.json();
-
-if (!data.words) {
-  alert("Failed to get What3Words location.");
-  console.error(data); // Optional: see the full error
-  return;
-}
-
-const words = data.words;
-
-const username = user.displayName || user.email;
-db.ref("users/" + encodeURIComponent(username)).set({
-  location: words,
-  timestamp: Date.now()
-});
-
-          alert("Location updated: " + words);
-        });
-      } else {
+      if (!navigator.geolocation) {
         alert("Geolocation is not supported by this browser.");
+        return;
       }
+
+      navigator.geolocation.getCurrentPosition(async position => {
+        const { latitude, longitude } = position.coords;
+
+        try {
+          const res = await fetch(`https://api.what3words.com/v3/convert-to-3wa?coordinates=${latitude},${longitude}&key=${w3wApiKey}`);
+          const data = await res.json();
+
+          if (!data.words) {
+            console.error("W3W API error:", data);
+            alert("Error: Could not get What3Words location. Check your API key or try again later.");
+            return;
+          }
+
+          const words = data.words;
+          const username = user.displayName || user.email;
+
+          await db.ref("users/" + encodeURIComponent(username)).set({
+            location: words,
+            timestamp: Date.now()
+          });
+
+          alert("Location updated: ///" + words);
+        } catch (error) {
+          console.error("Error updating location:", error);
+          alert("An error occurred while updating your location.");
+        }
+      }, error => {
+        console.error("Geolocation error:", error);
+        alert("Could not get your location. Make sure location services are enabled.");
+      });
     }
 
     document.getElementById("searchBtn").onclick = () => {
       const name = document.getElementById("searchUser").value.trim();
-      db.ref("users/" + encodeURIComponent(name)).once("value", snapshot => {
-        const val = snapshot.val();
-        if (val) {
-          document.getElementById("result").textContent = `///${val.location}`;
-        } else {
-          document.getElementById("result").textContent = "User not found.";
-        }
-      });
+      if (!name) return;
+
+      db.ref("users/" + encodeURIComponent(name)).once("value")
+        .then(snapshot => {
+          const val = snapshot.val();
+          if (val) {
+            document.getElementById("result").textContent = `///${val.location}`;
+          } else {
+            document.getElementById("result").textContent = "User not found.";
+          }
+        })
+        .catch(error => {
+          console.error("Error reading user location:", error);
+          document.getElementById("result").textContent = "Failed to fetch user data.";
+        });
     };
   </script>
 </body>
