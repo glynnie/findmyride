@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>W3W User Tracker</title>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    input, button { font-size: 16px; margin-top: 10px; }
+  </style>
+  <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-database-compat.js"></script>
+</head>
+<body>
+  <h2>W3W User Tracker</h2>
+  <button id="login">Sign in with Google</button>
+  <div id="userInfo" style="display:none;">
+    <p id="status">Signed in as <span id="username"></span></p>
+    <button id="updateLoc">Update My Location</button>
+  </div>
+
+  <hr>
+
+  <h3>Find a User's Location</h3>
+  <input type="text" id="searchUser" placeholder="Enter username">
+  <button id="searchBtn">Search</button>
+  <p id="result"></p>
+
+  <script>
+    // Your Firebase Config
+   const firebaseConfig = {
+    apiKey: "AIzaSyByiBjt6cbNME8xBgOLlohr7cE0q7ScHJQ",
+    authDomain: "findmyride-f4fa6.firebaseapp.com",
+    projectId: "findmyride-f4fa6",
+    storageBucket: "findmyride-f4fa6.firebasestorage.app",
+    messagingSenderId: "338463349397",
+    appId: "1:338463349397:web:449ab9a0066c5f26f1999c",
+    measurementId: "G-ETPBM5XQGE"
+  };
+
+    const w3wApiKey = 'P5MKHZPZ';
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    document.getElementById("login").onclick = () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider);
+    };
+
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        document.getElementById("userInfo").style.display = "block";
+        document.getElementById("username").textContent = user.displayName || user.email;
+        document.getElementById("updateLoc").onclick = () => updateLocation(user);
+      }
+    });
+
+    async function updateLocation(user) {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(async position => {
+          const { latitude, longitude } = position.coords;
+
+          const res = await fetch(`https://api.what3words.com/v3/convert-to-3wa?coordinates=${latitude},${longitude}&key=${w3wApiKey}`);
+          const data = await res.json();
+          const words = data.words;
+
+          const username = user.displayName || user.email;
+          db.ref("users/" + encodeURIComponent(username)).set({
+            location: words,
+            timestamp: Date.now()
+          });
+
+          alert("Location updated: " + words);
+        });
+      } else {
+        alert("Geolocation is not supported by this browser.");
+      }
+    }
+
+    document.getElementById("searchBtn").onclick = () => {
+      const name = document.getElementById("searchUser").value.trim();
+      db.ref("users/" + encodeURIComponent(name)).once("value", snapshot => {
+        const val = snapshot.val();
+        if (val) {
+          document.getElementById("result").textContent = `///${val.location}`;
+        } else {
+          document.getElementById("result").textContent = "User not found.";
+        }
+      });
+    };
+  </script>
+</body>
+</html>
