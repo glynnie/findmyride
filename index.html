@@ -11,8 +11,9 @@
   <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/11.7.1/firebase-database-compat.js"></script>
-  <!-- GeoHash library -->
-<script src="https://unpkg.com/ngeohash@0.6.3/build/ngeohash.min.js"></script></head>
+  <!-- Geohash.js library -->
+  <script src="https://cdn.jsdelivr.net/npm/geohash.js@1.0.0/build/geohash.min.js"></script>
+</head>
 <body>
   <h2>GeoHash User Tracker</h2>
   <button id="login">Sign in with Google</button>
@@ -66,7 +67,7 @@
       navigator.geolocation.getCurrentPosition(position => {
         const { latitude, longitude } = position.coords;
 
-        const geohash = ngeohash.encode(latitude, longitude, 8); // 8 chars ≈ ~19m x 19m
+        const geohash = Geohash.encode(latitude, longitude, 8); // 8 chars ≈ ~19m x 19m
 
         const username = user.displayName || user.email;
 
