@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buy This Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            font-size: 18px;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .button:hover {
+            background-color: #0056b3;
+        }
+        form {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>This Page Is Available for Purchase</h1>
+        <p>If you're interested, contact us below.</p>
+        <button class="button" onclick="document.getElementById('contactForm').submit();">
+            Contact to Buy This Page
+        </button>
+
+        <form id="contactForm" action="mailto:glyndwrgimblett@cr0n.org" method="post" enctype="text/plain">
+            <input type="hidden" name="subject" value="Interest in Buying This Page">
+            <input type="hidden" name="message" value="Hello, I'm interested in purchasing this landing page. Please provide more details.">
+        </form>
+    </div>
+
+</body>
+</html>
