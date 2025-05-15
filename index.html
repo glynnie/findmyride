@@ -31,6 +31,7 @@
       border-radius: 0px;
       box-shadow: 0 0 0px;
 min-height: 1080px
+--scale-factor: 0.5;
 
  rgba(0, 0, 0, 0.1);
     }
@@ -55,8 +56,9 @@ min-height: 1080px
     .iframe-container {
       position: relative;
 display: block;
-      height: 1080px;
-      width: 100%;
+      width: calc(1/var(--scale-factor) * 100%);
+    height: calc(1/var(--scale-factor) * 100%);
+}
 bottom: 0;
 min-height: 1080px
 transform: scale(var(5));
