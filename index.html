@@ -58,30 +58,7 @@ zoom: 2;
   </style>
 </head>
 <body>
-<label for="from">From:</label>
-    <input type="text" id="from" placeholder="Enter departure location">
-    
-    <label for="to">To:</label>
-    <input type="text" id="to" placeholder="Enter destination">
 
-    <button onclick="searchTrain()">Search</button>
-
-    <p><a id="trainLink" href="#" target="_blank">Go to Trainline</a></p>
-
-    <script>
-        function searchTrain() {
-            const from = encodeURIComponent(document.getElementById('from').value);
-            const to = encodeURIComponent(document.getElementById('to').value);
-            
-            if (from && to) {
-                const trainlineUrl = `https://www.thetrainline.com/?origin=${from}&destination=${to}`;
-                document.getElementById('trainLink').href = trainlineUrl;
-                document.getElementById('trainLink').innerText = "Search on Trainline 🚆";
-            } else {
-                alert("Please enter both locations!");
-            }
-        }
-    </script>
   <div class="container">
     <h1>This Page Is Available for Purchase</h1>
     <p>If you're interested, contact us below.</p>
