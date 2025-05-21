@@ -3,21 +3,25 @@
 <head>
   <meta charset="utf-8">
   <title>UK Map with Bus Stops</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
   <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.3.1/mapbox-gl-directions.css">
   <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.3.1/mapbox-gl-directions.js"></script>
   <style>
     html, body {
-      height: 100%;
+      height: 100dvh;
+      width: 100dvw;
       margin: 0;
       padding: 0;
       background: #eee;
       box-sizing: border-box;
+      overscroll-behavior: none;
+      touch-action: none;
     }
     body {
       min-height: 100dvh;
+      min-width: 100dvw;
       display: flex;
       flex-direction: column;
     }
@@ -25,32 +29,52 @@
       flex: 1 1 0%;
       min-height: 0;
       min-width: 0;
+      width: 100vw;
+      height: 100dvh;
+      /* Prevent scrollbars on foldables */
+      overflow: hidden;
     }
     /* Make the geolocate (my location) button much bigger */
-.mapboxgl-ctrl-geolocate {
-  width: 60px !important;
-  height: 60px !important;
-}
-
-.mapboxgl-ctrl-geolocate button {
-  width: 60px !important;
-  height: 60px !important;
-  font-size: 32px !important;
-  padding: 0 !important;
-  border-radius: 50% !important;
-}
-
-/* Make the SVG icon inside bigger */
-.mapboxgl-ctrl-geolocate svg {
-  width: 36px !important;
-  height: 36px !important;
-}
+    .mapboxgl-ctrl-geolocate {
+      width: 60px !important;
+      height: 60px !important;
+    }
+    .mapboxgl-ctrl-geolocate button {
+      width: 60px !important;
+      height: 60px !important;
+      font-size: 32px !important;
+      padding: 0 !important;
+      border-radius: 50% !important;
+    }
+    .mapboxgl-ctrl-geolocate svg {
+      width: 36px !important;
+      height: 36px !important;
+    }
+    @media (max-width: 600px), (max-height: 600px) {
+      .mapboxgl-ctrl-geolocate,
+      .mapboxgl-ctrl-geolocate button {
+        width: 48px !important;
+        height: 48px !important;
+      }
+      .mapboxgl-ctrl-geolocate svg {
+        width: 28px !important;
+        height: 28px !important;
+      }
+    }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <script>
-    // Mapbox logic
+    // Responsive zoom/center for mobile/foldables
+    function getInitialMapSettings() {
+      const isMobile = window.innerWidth < 700 || window.innerHeight < 700;
+      return {
+        center: [-2.5, 54.0],
+        zoom: isMobile ? 5.2 : 6
+      };
+    }
+
     mapboxgl.accessToken = 'pk.eyJ1IjoiZ2x5bm5pZSIsImEiOiJjbWFyN3o4bXIwNzViMmpyM3pzcHZtb2VpIn0.4jxVARpfk7z-1Tg9vcMhow';
 
     // UK bounds
@@ -59,11 +83,14 @@
       [1.9, 60.9]    // NE
     ];
 
+    // Use dynamic settings for foldables/mobile
+    let mapSettings = getInitialMapSettings();
+
     const map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-2.5, 54.0],
-      zoom: 6,
+      center: mapSettings.center,
+      zoom: mapSettings.zoom,
       maxBounds: UK_BOUNDS
     });
 
@@ -165,6 +192,14 @@
       map.on('mouseleave', 'bus-stops-labels', function() {
         map.getCanvas().style.cursor = '';
       });
+    });
+
+    // Listen for viewport changes (fold/unfold/orientation)
+    window.addEventListener('resize', () => {
+      // Optionally, adjust map size or zoom if needed
+      // For most cases, MapboxGL resizes automatically
+      // But you may want to adjust zoom for very small screens
+      // map.resize(); // Not usually needed, but can be called if issues arise
     });
   </script>
 </body>
