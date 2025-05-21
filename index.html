@@ -6,33 +6,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
-  <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.3.1/mapbox-gl-directions.css">
-  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.3.1/mapbox-gl-directions.js"></script>
   <style>
     html, body {
       height: 100%;
-      width: 100dvw;
+      width: 100%;
       margin: 0;
       padding: 0;
-      background: #eee;
       box-sizing: border-box;
-      overscroll-behavior: none;
-      touch-action: none;
-    }
-    body {
-      min-height: 100%;
-      min-width: 100dvw;
-      display: flex;
-      flex-direction: column;
-    }
-    #map {
-      flex: 1 1 0%;
-      min-height: 0;
-      min-width: 0;
-      width: 100%;
-      height: 100%;
-      /* Prevent scrollbars on foldables */
       overflow: hidden;
+    }
+    /* Use absolute positioning for the map to fill the screen without stretching */
+    #map {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      width: 100vw;
+      height: 100vh;
     }
     /* Make the geolocate (my location) button much bigger */
     .mapboxgl-ctrl-geolocate {
@@ -50,47 +38,23 @@
       width: 36px !important;
       height: 36px !important;
     }
-    @media (max-width: 600px), (max-height: 600px) {
-      .mapboxgl-ctrl-geolocate,
-      .mapboxgl-ctrl-geolocate button {
-        width: 48px !important;
-        height: 48px !important;
-      }
-      .mapboxgl-ctrl-geolocate svg {
-        width: 28px !important;
-        height: 28px !important;
-      }
-    }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <script>
-    // Responsive zoom/center for mobile/foldables
-    function getInitialMapSettings() {
-      const isMobile = window.innerWidth < 700 || window.innerHeight < 700;
-      return {
-        center: [-2.5, 54.0],
-        zoom: isMobile ? 5.2 : 6
-      };
-    }
-
     mapboxgl.accessToken = 'pk.eyJ1IjoiZ2x5bm5pZSIsImEiOiJjbWFyN3o4bXIwNzViMmpyM3pzcHZtb2VpIn0.4jxVARpfk7z-1Tg9vcMhow';
 
-    // UK bounds
     const UK_BOUNDS = [
       [-10.5, 49.5], // SW
       [1.9, 60.9]    // NE
     ];
 
-    // Use dynamic settings for foldables/mobile
-    let mapSettings = getInitialMapSettings();
-
     const map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/mapbox/streets-v12',
-      center: mapSettings.center,
-      zoom: mapSettings.zoom,
+      center: [-2.5, 54.0],
+      zoom: 6,
       maxBounds: UK_BOUNDS
     });
 
@@ -110,7 +74,6 @@
         url: 'mapbox://glynnie.3ayy6w4a'
       });
 
-      // Green circle layer, visible at zoom 6-16
       map.addLayer({
         id: 'bus-stops-green-circles',
         type: 'circle',
@@ -126,7 +89,6 @@
         }
       });
 
-      // Symbol layer with border-dot-13 and text, visible at zoom 16+
       map.addLayer({
         id: 'bus-stops-labels',
         type: 'symbol',
@@ -161,17 +123,13 @@
         }
       });
 
-      // --- CLICK HANDLER FOR BUS STOP SYMBOLS ---
       map.on('click', 'bus-stops-labels', function(e) {
         if (!e.features || !e.features.length) return;
         const feature = e.features[0];
         const atco = feature.properties.atco;
-
-        // Copy ATCO code to clipboard
         if (navigator.clipboard) {
           navigator.clipboard.writeText(atco);
         } else {
-          // Fallback for older browsers
           const tempInput = document.createElement('input');
           document.body.appendChild(tempInput);
           tempInput.value = atco;
@@ -179,13 +137,10 @@
           document.execCommand('copy');
           document.body.removeChild(tempInput);
         }
-
-        // Auto-search: open results in new tab
         const url = `https://nextbuses.mobi/WebView/BusStopSearch/BusStopSearchResults?id=${encodeURIComponent(atco)}&submit=Search`;
         window.open(url, '_blank');
       });
 
-      // Change cursor to pointer on hover
       map.on('mouseenter', 'bus-stops-labels', function() {
         map.getCanvas().style.cursor = 'pointer';
       });
@@ -194,12 +149,9 @@
       });
     });
 
-    // Listen for viewport changes (fold/unfold/orientation)
+    // Ensure map resizes correctly if viewport changes (for foldables, etc)
     window.addEventListener('resize', () => {
-      // Optionally, adjust map size or zoom if needed
-      // For most cases, MapboxGL resizes automatically
-      // But you may want to adjust zoom for very small screens
-      // map.resize(); // Not usually needed, but can be called if issues arise
+      map.resize();
     });
   </script>
 </body>
