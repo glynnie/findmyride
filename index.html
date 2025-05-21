@@ -27,6 +27,7 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.07);
       padding: 16px 0 8px 0;
       z-index: 10001;
+height: 0%;
     }
     .search-bar-form {
       display: flex;
@@ -90,7 +91,6 @@
       e.preventDefault();
       const query = encodeURIComponent(document.getElementById('busStopSearchInput').value.trim());
       if(query) {
-        // Correct URL pattern with id parameter
         const url = `https://nextbuses.mobi/WebView/BusStopSearch/BusStopSearchResults?id=${query}&submit=Search`;
         window.open(url, '_blank');
       }
@@ -156,7 +156,12 @@
           'icon-image': 'border-dot-13',
           'icon-size': 1,
           'icon-allow-overlap': true,
-          'text-field': ['get', 'popup'],
+          'text-field': [
+            'format',
+            ['get', 'popup'], {},
+            '\n', {},
+            ['get', 'atco'], { 'font-scale': 0.9, 'text-color': 'red' }
+          ],
           'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
           'text-size': [
             'interpolate', ['linear'], ['zoom'],
@@ -173,6 +178,48 @@
           'text-halo-width': 1,
           'text-halo-blur': 0.5
         }
+      });
+
+      // --- CLICK HANDLER FOR BUS STOP SYMBOLS ---
+      map.on('click', 'bus-stops-labels', function(e) {
+        if (!e.features || !e.features.length) return;
+        const feature = e.features[0];
+        const atco = feature.properties.atco;
+
+        // Copy ATCO code to clipboard
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(atco);
+        } else {
+          // Fallback for older browsers
+          const tempInput = document.createElement('input');
+          document.body.appendChild(tempInput);
+          tempInput.value = atco;
+          tempInput.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInput);
+        }
+
+        // Fill the search bar
+        const searchInput = document.getElementById('busStopSearchInput');
+        searchInput.value = atco;
+
+        // Optionally, trigger the search automatically:
+        document.getElementById('busStopSearchForm').dispatchEvent(new Event('submit'));
+
+        // Show a popup as feedback
+        //map.flyTo({center: feature.geometry.coordinates, zoom: Math.max(map.getZoom(), 16)});
+        //new mapboxgl.Popup()
+         // .setLngLat(feature.geometry.coordinates)
+          //.setHTML(`<strong>ATCO:</strong> ${atco}<br><small>Copied to search bar!</small>`)
+          //.addTo(map);
+      });
+
+      // Change cursor to pointer on hover
+      map.on('mouseenter', 'bus-stops-labels', function() {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'bus-stops-labels', function() {
+        map.getCanvas().style.cursor = '';
       });
     });
   </script>
