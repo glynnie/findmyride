@@ -137,6 +137,7 @@
         // Auto-search: open results in new tab
         const url = `https://nextbuses.mobi/WebView/BusStopSearch/BusStopSearchResults?id=${encodeURIComponent(atco)}&submit=Search`;
         window.open(url, '_blank');
+      });
 
       // Change cursor to pointer on hover
       map.on('mouseenter', 'bus-stops-labels', function() {
