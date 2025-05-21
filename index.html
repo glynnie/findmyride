@@ -31,7 +31,7 @@
     }).addTo(map);
 
     // Load local CSV and add as geoCSV layer
-    $.get('finalstops.csv', function(csvContent) {
+    $.get('https://glynnie.github.io/findmyride/finalstops.csv', function(csvContent) {
       var geoCsvLayer = L.geoCsv(csvContent, {
         firstLineTitles: true,
         fieldSeparator: ',',
