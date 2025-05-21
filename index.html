@@ -1,71 +1,51 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-ETPBM5XQGE"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-ETPBM5XQGE');
-  </script>
-
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Buy This Page</title>
-
+  <meta charset="utf-8"/>
+  <title>Leaflet.geoCSV Static Example</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: left;
-      padding: 0;
-      background-color: #f4f4f4;
-      margin: 0;
-    }
-
-    .container {
-      text-align: left;
-      width: 100%;
-      margin: 0px;
-      background: white;
-      padding: 0px;
-      border-radius: 0px;
-      box-shadow: 0 0 0px;
-min-height: 1080px;
-zoom: 2;
- rgba(0, 0, 0, 0.1);
-    }
-
-    .button {
-      display: block;
-      width: 100%;
-      padding: 0px;
-      font-size: 20px;
-      color: white;
-      background-color: #007bff;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      text-decoration: none;
-    }
-
-    .button:hover {
-      background-color: #0056b3;
-    }
-
-   
-   
+    #map { width: 100%; height: 600px; }
   </style>
 </head>
 <body>
+  <h2>Map from Local CSV (Leaflet.geoCSV)</h2>
+  <div id="map"></div>
 
-  <div class="container">
-    <h1>This Page Is Available for Purchase</h1>
-    <p>If you're interested, contact us below.</p>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+  <!-- Leaflet.geoCSV plugin (served via githack CDN) -->
+  <script src="https://rawcdn.githack.com/joker-x/Leaflet.geoCSV/master/leaflet.geocsv.js"></script>
+  <!-- jQuery for AJAX -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <iframe src="https://docs.google.com/forms/d/e/1FAIpQLSdsdxZ2aEUEi-4p6Xzit9xAt9y_8pTPLg0n0zx4zA_NGtB8WQ/viewform?embedded=true" width="100%" height="1920" frameborder="0" marginheight="0" marginwidth="0">Loading…</iframe>
-    
-  </div>
-</div>
+  <script>
+    // Initialize the map
+    var map = L.map('map').setView([51.5, -0.12], 12);
+
+    // Add OpenStreetMap base layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Load local CSV and add as geoCSV layer
+    $.get('finalstops.csv', function(csvContent) {
+      var geoCsvLayer = L.geoCsv(csvContent, {
+        firstLineTitles: true,
+        fieldSeparator: ',',
+        latitudeTitle: 'lat',      // Change if your CSV uses different names
+        longitudeTitle: 'lng',
+        onEachFeature: function(feature, layer) {
+          // Use the popup column if present, otherwise show the stop_name
+          var popupText = feature.properties.popup || feature.properties.stop_name || "No info";
+          layer.bindPopup(popupText);
+        }
+      });
+      geoCsvLayer.addTo(map);
+      map.fitBounds(geoCsvLayer.getBounds());
+    });
+  </script>
 </body>
 </html>
