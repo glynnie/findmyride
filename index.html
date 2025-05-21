@@ -3,32 +3,74 @@
 <head>
   <meta charset="utf-8">
   <title>UK Map with Bus Stops</title>
-  <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet">
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
   <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.3.1/mapbox-gl-directions.css">
   <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.3.1/mapbox-gl-directions.js"></script>
   <style>
-    body { margin: 0; padding: 0; }
-    #map { position: absolute; width: 100%; height: 100%; }
-
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      width: 100%;
+      font-family: system-ui, sans-serif;
+      background: #f8f8f8;
+    }
+    #map {
+      position: fixed;
+      width: 100vw;
+      height: 100vh;
+      min-height: 100dvh;
+      touch-action: none;
+      top: 0; left: 0; right: 0; bottom: 0;
+    }
     /* Popup customizations */
     .mapboxgl-popup-content {
-      font-size: 8px;
-      line-height: 1.3;
+      font-size: 13px;
+      line-height: 1.4;
       color: #222;
-      padding: 4px 5px;
+      padding: 8px 12px;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
     }
     .mapboxgl-popup-close-button {
-      display: none; /* Hide the "X" close button */
+      display: none;
     }
     .mapboxgl-popup {
       background: transparent !important;
       box-shadow: none !important;
       border: none !important;
+      max-width: 90vw;
     }
     .mapboxgl-popup-tip {
       border-top-color: transparent !important;
+    }
+    /* Directions panel mobile-friendly */
+    .mapboxgl-ctrl-directions {
+      max-width: 100vw !important;
+      min-width: 0 !important;
+      font-size: 16px;
+    }
+    .mapboxgl-ctrl-top-left, .mapboxgl-ctrl-top-right {
+      z-index: 10;
+    }
+    /* Make controls bigger for touch */
+    .mapboxgl-ctrl button, .mapboxgl-ctrl input, .mapboxgl-ctrl label {
+      font-size: 1.1em;
+      min-height: 44px;
+      min-width: 44px;
+    }
+    /* Responsive tweaks */
+    @media (max-width: 600px) {
+      .mapboxgl-popup-content {
+        font-size: 11px;
+        padding: 6px 8px;
+      }
+      .mapboxgl-ctrl-directions {
+        font-size: 14px;
+      }
     }
   </style>
 </head>
@@ -63,15 +105,17 @@
   });
   map.addControl(directions, 'top-left');
 
-map.addControl(
-  new mapboxgl.GeolocateControl({
-    positionOptions: {
-      enableHighAccuracy: true
-    },
-    trackUserLocation: true,
-    showUserHeading: true
-  })
-);
+  // Geolocate control for user location
+  map.addControl(
+    new mapboxgl.GeolocateControl({
+      positionOptions: {
+        enableHighAccuracy: true
+      },
+      trackUserLocation: true,
+      showUserHeading: true
+    }),
+    'top-right'
+  );
 
   let busStopPopups = []; // Store open popups to remove later
 
