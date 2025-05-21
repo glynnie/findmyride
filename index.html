@@ -21,70 +21,16 @@
       display: flex;
       flex-direction: column;
     }
-    .search-bar-container {
-      width: 100%;
-      background: #fff;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-      padding: 16px 0 8px 0;
-      z-index: 10001;
-height: 0%;
-    }
-    .search-bar-form {
-      display: flex;
-      gap: 8px;
-      max-width: 480px;
-      margin: 0 auto;
-      align-items: center;
-      justify-content: center;
-    }
-    .search-bar-form input[type="text"] {
-      flex: 1;
-      padding: 8px 12px;
-      font-size: 1rem;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-    }
-    .search-bar-form button {
-      padding: 8px 18px;
-      font-size: 1rem;
-      background: #0078d4;
-      color: #fff;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .search-bar-form button:hover {
-      background: #005fa3;
-    }
     #map {
       flex: 1 1 0%;
       min-height: 0;
       min-width: 0;
-    }
-    @media (max-width: 600px) {
-      .search-bar-container {
-        padding: 10px 0 6px 0;
-      }
-      .search-bar-form {
-        max-width: 98%;
-      }
     }
   </style>
 </head>
 <body>
   <div id="map"></div>
   <script>
-    // Search bar logic
-    document.getElementById('busStopSearchForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const query = encodeURIComponent(document.getElementById('busStopSearchInput').value.trim());
-      if(query) {
-        const url = `https://nextbuses.mobi/WebView/BusStopSearch/BusStopSearchResults?id=${query}&submit=Search`;
-        window.open(url, '_blank');
-      }
-    });
-
     // Mapbox logic
     mapboxgl.accessToken = 'pk.eyJ1IjoiZ2x5bm5pZSIsImEiOiJjbWFyN3o4bXIwNzViMmpyM3pzcHZtb2VpIn0.4jxVARpfk7z-1Tg9vcMhow';
 
@@ -188,20 +134,9 @@ height: 0%;
           document.body.removeChild(tempInput);
         }
 
-        // Fill the search bar
-        const searchInput = document.getElementById('busStopSearchInput');
-        searchInput.value = atco;
-
-        // Optionally, trigger the search automatically:
-        document.getElementById('busStopSearchForm').dispatchEvent(new Event('submit'));
-
-        // Show a popup as feedback
-        //map.flyTo({center: feature.geometry.coordinates, zoom: Math.max(map.getZoom(), 16)});
-        //new mapboxgl.Popup()
-         // .setLngLat(feature.geometry.coordinates)
-          //.setHTML(`<strong>ATCO:</strong> ${atco}<br><small>Copied to search bar!</small>`)
-          //.addTo(map);
-      });
+        // Auto-search: open results in new tab
+        const url = `https://nextbuses.mobi/WebView/BusStopSearch/BusStopSearchResults?id=${encodeURIComponent(atco)}&submit=Search`;
+        window.open(url, '_blank');
 
       // Change cursor to pointer on hover
       map.on('mouseenter', 'bus-stops-labels', function() {
