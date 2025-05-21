@@ -25,7 +25,7 @@
     }).addTo(map);
 
     // Use your CSV URL here:
-    $.get('https://glynnie.github.io/findmyride/finalstops.csv', function(csvContent) {
+    $.get('https://raw.githubusercontent.com/glynnie/findmyride/refs/heads/main/FINALUK.csv', function(csvContent) {
       var geoCsvLayer = L.geoCsv(csvContent, {
         firstLineTitles: true,
         fieldSeparator: ',',
