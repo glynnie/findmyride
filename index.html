@@ -1,30 +1,158 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FindMyRide.co.uk</title>
-    <style>
-        .iframe-container {
-            position: relative;
-            width: 100%;
-            padding-bottom: 56.25%; /* 16:9 aspect ratio */
-            height: 0;
-        }
-        .iframe-container iframe {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            top: 0;
-            left: 0;
-            border: none;
-        }
-    </style>
+  <meta charset="utf-8">
+  <title>UK Map with Bus Stops</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet">
+  <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
+  <style>
+    html, body {
+      height: 100%;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      overflow: hidden;
+    }
+    /* Use absolute positioning for the map to fill the screen without stretching */
+    #map {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      width: 100vw;
+      height: 100vh;
+    }
+    /* Make the geolocate (my location) button much bigger */
+    .mapboxgl-ctrl-geolocate {
+      width: 60px !important;
+      height: 60px !important;
+    }
+    .mapboxgl-ctrl-geolocate button {
+      width: 60px !important;
+      height: 60px !important;
+      font-size: 32px !important;
+      padding: 0 !important;
+      border-radius: 50% !important;
+    }
+    .mapboxgl-ctrl-geolocate svg {
+      width: 36px !important;
+      height: 36px !important;
+    }
+  </style>
 </head>
 <body>
-    <div class="iframe-container">
-        <iframe src="https://busmaps.com/en/widget/directions?&lang=en"></iframe>
-    </div>
+  <div id="map"></div>
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiZ2x5bm5pZSIsImEiOiJjbWFyN3o4bXIwNzViMmpyM3pzcHZtb2VpIn0.4jxVARpfk7z-1Tg9vcMhow';
+
+    const UK_BOUNDS = [
+      [-10.5, 49.5], // SW
+      [1.9, 60.9]    // NE
+    ];
+
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [-2.5, 54.0],
+      zoom: 6,
+      maxBounds: UK_BOUNDS
+    });
+
+    map.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true
+        },
+        trackUserLocation: true,
+        showUserHeading: true
+      })
+    );
+
+    map.on('load', () => {
+      map.addSource('bus-stops', {
+        type: 'vector',
+        url: 'mapbox://glynnie.3ayy6w4a'
+      });
+
+      map.addLayer({
+        id: 'bus-stops-green-circles',
+        type: 'circle',
+        source: 'bus-stops',
+        'source-layer': 'FINALUK-62rgvx',
+        minzoom: 6,
+        maxzoom: 16,
+        paint: {
+          'circle-radius': 6,
+          'circle-color': '#00FF00',
+          'circle-stroke-width': 1,
+          'circle-stroke-color': '#222'
+        }
+      });
+
+      map.addLayer({
+        id: 'bus-stops-labels',
+        type: 'symbol',
+        source: 'bus-stops',
+        'source-layer': 'FINALUK-62rgvx',
+        minzoom: 16,
+        layout: {
+          'icon-image': 'border-dot-13',
+          'icon-size': 1,
+          'icon-allow-overlap': true,
+          'text-field': [
+            'format',
+            ['get', 'popup'], {},
+            '\n', {},
+            ['get', 'atco'], { 'font-scale': 0.9, 'text-color': 'red' }
+          ],
+          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+          'text-size': [
+            'interpolate', ['linear'], ['zoom'],
+            6, 12,
+            10, 20
+          ],
+          'text-anchor': 'bottom',
+          'text-offset': [0, 0.8],
+          'text-allow-overlap': true
+        },
+        paint: {
+          'text-color': '#222',
+          'text-halo-color': '#00FF00',
+          'text-halo-width': 1,
+          'text-halo-blur': 0.5
+        }
+      });
+
+      map.on('click', 'bus-stops-labels', function(e) {
+        if (!e.features || !e.features.length) return;
+        const feature = e.features[0];
+        const atco = feature.properties.atco;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(atco);
+        } else {
+          const tempInput = document.createElement('input');
+          document.body.appendChild(tempInput);
+          tempInput.value = atco;
+          tempInput.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInput);
+        }
+        const url = `https://nextbuses.mobi/WebView/BusStopSearch/BusStopSearchResults?id=${encodeURIComponent(atco)}&submit=Search`;
+        window.open(url, '_blank');
+      });
+
+      map.on('mouseenter', 'bus-stops-labels', function() {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', 'bus-stops-labels', function() {
+        map.getCanvas().style.cursor = '';
+      });
+    });
+
+    // Ensure map resizes correctly if viewport changes (for foldables, etc)
+    window.addEventListener('resize', () => {
+      map.resize();
+    });
+  </script>
 </body>
 </html>
