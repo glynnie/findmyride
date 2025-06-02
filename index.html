@@ -1,1 +1,29 @@
-<iframe src="https://busmaps.com/en/widget/directions?&lang=en&display_mode=vector" frameborder="0" allowfullscreen="" scrolling="no" width="100%" height="100%"></iframe>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mobile-First Iframe</title>
+    <style>
+        .iframe-container {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+        }
+        .iframe-container iframe {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="iframe-container">
+        <iframe src="https://busmaps.com/en/widget/directions?&lang=en&display_mode=vector" allowfullscreen></iframe>
+    </div>
+</body>
+</html>
