@@ -3,59 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <title>findmyride.co.uk</title>
-  <meta name="viewport" content="width=device-width, initial-scale=5"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
   <style>
     html, body {
-      height: 100%;
       margin: 0;
       padding: 0;
       background: #fff;
+height: 700;
     }
-    body {
-      display: flex;
-      flex-direction: column;
-      min-height: 100vh;
-    }
-    header {
-      background: #ff9766;
-      color: #222;
-      text-align: center;
-      padding: 1em 0;
-      font-size: 1.2em;
-      font-weight: bold;
-      letter-spacing: 0.05em;
-    }
-    .iframe-container {
-      flex: 1 1 auto;
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      position: relative;
-    }
-    iframe {
-      border: none;
-      width: 100vw;
-      height: 100vh;
-      min-height: 400px;
-      max-width: 100vw;
-      display: block;
-    }
-    @media (max-width: 600px) {
-      header {
-        font-size: 1em;
-        padding: 0.7em 0;
-      }
-      iframe {
-        min-height: 300px;
-      }
     }
   </style>
 </head>
 <body>
   <header>
   </header>
+<center>
   <div class="iframe-container">
-<iframe src="https://busmaps.com/en/widget/directions?&lang=en" frameborder="0" allowfullscreen="" scrolling="no" width="800" height="500"></iframe><div style="font-size: 14px; line-height: 18px; text-align: right;"><a title="Busmaps.com" href="https://busmaps.com" style="color: #f86433;">All public transport routes on Busmaps.com</a></div>
+<iframe src="https://busmaps.com/en/widget/directions?&lang=en" frameborder="0" allowfullscreen="yes" height=700 width=360 scrolling="no"></iframe><div style="font-size: 16px; line-height: 16px; text-align: right;">
   </div>
-</body>
+</center></body>
 </html>
