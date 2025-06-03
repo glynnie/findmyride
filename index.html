@@ -3,12 +3,57 @@
 <head>
   <meta charset="UTF-8" />
   <title>findmyride.co.uk</title>
-
-  <style></style>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+    }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .iframe-container {
+      flex: 1 1 auto;
+      width: 100vw;
+      height: 100vh;
+      max-width: 100vw;
+      max-height: 100vh;
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+    iframe {
+      border: none;
+      width: 100vw;
+      height: 100vh;
+      min-height: 400px;
+      max-width: 100vw;
+      display: block;
+      background: #fff;
+    }
+    @media (max-width: 600px) {
+      iframe {
+        min-height: 300px;
+      }
+    }
+  </style>
 </head>
 <body>
   <header>
+    <!-- Optional: Add a logo or title here -->
   </header>
-<iframe src="https://busmaps.com/en/widget/directions?&lang=en" frameborder="0" allowfullscreen="" height=700px width=360px scrolling="yes"></iframe>
-  </div></body>
+  <div class="iframe-container">
+    <iframe 
+      src="https://busmaps.com/en/widget/directions?lang=en"
+      allowfullscreen
+      scrolling="yes"
+      title="BusMaps Directions Widget"
+    ></iframe>
+  </div>
+</body>
 </html>
