@@ -1,158 +1,206 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="utf-8">
-  <title>UK Map with Bus Stops</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet">
-  <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
-  <style>
-    html, body {
-      height: 100%;
-      width: 100%;
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      overflow: hidden;
-    }
-    /* Use absolute positioning for the map to fill the screen without stretching */
-    #map {
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      width: 100vw;
-      height: 100vh;
-    }
-    /* Make the geolocate (my location) button much bigger */
-    .mapboxgl-ctrl-geolocate {
-      width: 60px !important;
-      height: 60px !important;
-    }
-    .mapboxgl-ctrl-geolocate button {
-      width: 60px !important;
-      height: 60px !important;
-      font-size: 32px !important;
-      padding: 0 !important;
-      border-radius: 50% !important;
-    }
-    .mapboxgl-ctrl-geolocate svg {
-      width: 36px !important;
-      height: 36px !important;
-    }
-  </style>
+    <meta charset="utf-8" />
+    <title>Bus Maps</title>
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.8.2/mapbox-gl.css" rel="stylesheet" />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.2/mapbox-gl.js"></script>
+    <script src="https://unpkg.com/@mapbox/polyline@1.2.0/src/polyline.js"></script>
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:0; bottom:0; width:100%; }
+        #controls {
+            position: absolute;
+            z-index: 2;
+            background: rgba(255,255,255,0.95);
+            padding: 12px;
+            border-radius: 6px;
+            left: 10px;
+            top: 10px;
+            font-family: sans-serif;
+        }
+        #loading {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.9);
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-family: sans-serif;
+            z-index: 3;
+            display: none;
+        }
+        #error {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffeaea;
+            color: #b30000;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-family: sans-serif;
+            z-index: 3;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-  <div id="map"></div>
-  <script>
-    mapboxgl.accessToken = 'pk.eyJ1IjoiZ2x5bm5pZSIsImEiOiJjbWFyN3o4bXIwNzViMmpyM3pzcHZtb2VpIn0.4jxVARpfk7z-1Tg9vcMhow';
+    <div id="controls">
+        <label>Origin: <input type="text" id="origin" value="Llanelli" /></label><br>
+        <label>Destination: <input type="text" id="destination" value="Llandeilo" /></label><br>
+        <button id="planRouteBtn">Plan Transit Route</button>
+        <button id="clearMapBtn">Clear Map</button>
+    </div>
+    <div id="loading">Loading routes...</div>
+    <div id="error"></div>
+    <div id="map"></div>
+    <script>
+        // Mapbox token (replace with your own if needed)
+        mapboxgl.accessToken = 'pk.eyJ1IjoiZ2x5bm5pZSIsImEiOiJjbWFyN3o4bXIwNzViMmpyM3pzcHZtb2VpIn0.4jxVARpfk7z-1Tg9vcMhow';
 
-    const UK_BOUNDS = [
-      [-10.5, 49.5], // SW
-      [1.9, 60.9]    // NE
-    ];
+        // Keep track of route layer/source IDs for cleanup
+        let currentRouteIds = [];
 
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-2.5, 54.0],
-      zoom: 6,
-      maxBounds: UK_BOUNDS
-    });
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const planRouteBtn = document.getElementById('planRouteBtn');
+        const clearMapBtn = document.getElementById('clearMapBtn');
 
-    map.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: {
-          enableHighAccuracy: true
-        },
-        trackUserLocation: true,
-        showUserHeading: true
-      })
-    );
+        // Initialize map
+        const map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v11',
+            center: [-4.164477, 51.684301],
+            zoom: 10
+        });
 
-    map.on('load', () => {
-      map.addSource('bus-stops', {
-        type: 'vector',
-        url: 'mapbox://glynnie.3ayy6w4a'
-      });
-
-      map.addLayer({
-        id: 'bus-stops-green-circles',
-        type: 'circle',
-        source: 'bus-stops',
-        'source-layer': 'FINALUK-62rgvx',
-        minzoom: 6,
-        maxzoom: 16,
-        paint: {
-          'circle-radius': 6,
-          'circle-color': '#00FF00',
-          'circle-stroke-width': 1,
-          'circle-stroke-color': '#222'
+        // Helper to clear old route layers/sources
+        function clearRoutesFromMap() {
+            currentRouteIds.forEach(id => {
+                if (map.getLayer(id)) map.removeLayer(id);
+                if (map.getSource(id)) map.removeSource(id);
+            });
+            currentRouteIds = [];
         }
-      });
 
-      map.addLayer({
-        id: 'bus-stops-labels',
-        type: 'symbol',
-        source: 'bus-stops',
-        'source-layer': 'FINALUK-62rgvx',
-        minzoom: 16,
-        layout: {
-          'icon-image': 'border-dot-13',
-          'icon-size': 1,
-          'icon-allow-overlap': true,
-          'text-field': [
-            'format',
-            ['get', 'popup'], {},
-            '\n', {},
-            ['get', 'atco'], { 'font-scale': 0.9, 'text-color': 'red' }
-          ],
-          'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-          'text-size': [
-            'interpolate', ['linear'], ['zoom'],
-            6, 12,
-            10, 20
-          ],
-          'text-anchor': 'bottom',
-          'text-offset': [0, 0.8],
-          'text-allow-overlap': true
-        },
-        paint: {
-          'text-color': '#222',
-          'text-halo-color': '#00FF00',
-          'text-halo-width': 1,
-          'text-halo-blur': 0.5
+        // Draw routes on the map
+        function drawRoutesOnMap(routeData) {
+            clearRoutesFromMap();
+            let allCoords = [];
+
+            routeData.routes.forEach((route, routeIdx) => {
+                if (!route.sections) return;
+                route.sections.forEach((section, sectionIdx) => {
+                    if (section.polyline) {
+                        const coords = polyline.decode(section.polyline).map(
+                            ([lat, lng]) => [lng, lat]
+                        );
+                        allCoords.push(...coords);
+
+                        const srcId = `route-${routeIdx}-section-${sectionIdx}`;
+                        const layerId = srcId;
+                        currentRouteIds.push(srcId);
+
+                        map.addSource(srcId, {
+                            type: "geojson",
+                            data: {
+                                type: "Feature",
+                                geometry: {
+                                    type: "LineString",
+                                    coordinates: coords
+                                },
+                                properties: {}
+                            }
+                        });
+
+                        // Color logic
+                        let color = "#000";
+                        if (section.type === "transit" && section.transport && section.transport.color) {
+                            color = section.transport.color;
+                        } else if (section.type === "pedestrian") {
+                            color = "#666";
+                        }
+
+                        map.addLayer({
+                            id: layerId,
+                            type: "line",
+                            source: srcId,
+                            layout: {
+                                "line-join": "round",
+                                "line-cap": "round"
+                            },
+                            paint: {
+                                "line-color": color,
+                                "line-width": 4,
+                                "line-opacity": 0.8
+                            }
+                        });
+                    }
+                });
+            });
+
+            // Fit bounds
+            if (allCoords.length) {
+                const bounds = allCoords.reduce(
+                    (b, coord) => b.extend(coord),
+                    new mapboxgl.LngLatBounds(allCoords[0], allCoords[0])
+                );
+                map.fitBounds(bounds, { padding: 50 });
+            }
         }
-      });
 
-      map.on('click', 'bus-stops-labels', function(e) {
-        if (!e.features || !e.features.length) return;
-        const feature = e.features[0];
-        const atco = feature.properties.atco;
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(atco);
-        } else {
-          const tempInput = document.createElement('input');
-          document.body.appendChild(tempInput);
-          tempInput.value = atco;
-          tempInput.select();
-          document.execCommand('copy');
-          document.body.removeChild(tempInput);
+        // Fetch and draw routes
+        function fetchAndDrawRoutes() {
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+
+            // Get origin/destination from input fields (customize as needed)
+            const origin = document.getElementById('origin').value;
+            const destination = document.getElementById('destination').value;
+
+            // You may need to encode or use these in your API call
+            // This is a placeholder URL - adapt to your actual API
+            const apiUrl = `/api/routes?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
+
+            fetch(apiUrl)
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(routeData => {
+                    loadingDiv.style.display = 'none';
+                    if (!routeData.routes || !routeData.routes.length) {
+                        errorDiv.textContent = 'No routes found.';
+                        errorDiv.style.display = 'block';
+                        clearRoutesFromMap();
+                        return;
+                    }
+                    drawRoutesOnMap(routeData);
+                })
+                .catch(error => {
+                    loadingDiv.style.display = 'none';
+                    errorDiv.textContent = 'Error fetching routes: ' + error.message;
+                    errorDiv.style.display = 'block';
+                    clearRoutesFromMap();
+                });
         }
-        const url = `https://nextbuses.mobi/WebView/BusStopSearch/BusStopSearchResults?id=${encodeURIComponent(atco)}&submit=Search`;
-        window.open(url, '_blank');
-      });
 
-      map.on('mouseenter', 'bus-stops-labels', function() {
-        map.getCanvas().style.cursor = 'pointer';
-      });
-      map.on('mouseleave', 'bus-stops-labels', function() {
-        map.getCanvas().style.cursor = '';
-      });
-    });
+        // Button event: plan route
+        planRouteBtn.addEventListener('click', function() {
+            fetchAndDrawRoutes();
+        });
 
-    // Ensure map resizes correctly if viewport changes (for foldables, etc)
-    window.addEventListener('resize', () => {
-      map.resize();
-    });
-  </script>
+        // Button event: clear map
+        clearMapBtn.addEventListener('click', function() {
+            clearRoutesFromMap();
+            errorDiv.style.display = 'none';
+        });
+
+        // Optionally, fetch routes on page load:
+        // map.on('load', fetchAndDrawRoutes);
+    </script>
 </body>
 </html>
