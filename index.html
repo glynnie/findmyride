@@ -1,206 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <title>Bus Maps</title>
-    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-    <link href="https://api.mapbox.com/mapbox-gl-js/v2.8.2/mapbox-gl.css" rel="stylesheet" />
-    <script src="https://api.mapbox.com/mapbox-gl-js/v2.8.2/mapbox-gl.js"></script>
-    <script src="https://unpkg.com/@mapbox/polyline@1.2.0/src/polyline.js"></script>
-    <style>
-        body { margin:0; padding:0; }
-        #map { position:absolute; top:0; bottom:0; width:100%; }
-        #controls {
-            position: absolute;
-            z-index: 2;
-            background: rgba(255,255,255,0.95);
-            padding: 12px;
-            border-radius: 6px;
-            left: 10px;
-            top: 10px;
-            font-family: sans-serif;
-        }
-        #loading {
-            position: absolute;
-            top: 10px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255,255,255,0.9);
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-family: sans-serif;
-            z-index: 3;
-            display: none;
-        }
-        #error {
-            position: absolute;
-            top: 50px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #ffeaea;
-            color: #b30000;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-family: sans-serif;
-            z-index: 3;
-            display: none;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <title>findmyride.co.uk</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: #fff;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    header {
+      background: #ff9766;
+      color: #222;
+      text-align: center;
+      padding: 1em 0;
+      font-size: 1.2em;
+      font-weight: bold;
+      letter-spacing: 0.05em;
+    }
+    .iframe-container {
+      flex: 1 1 auto;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+    iframe {
+      border: none;
+      width: 100vw;
+      height: 100vh;
+      min-height: 400px;
+      max-width: 100vw;
+      display: block;
+    }
+    @media (max-width: 600px) {
+      header {
+        font-size: 1em;
+        padding: 0.7em 0;
+      }
+      iframe {
+        min-height: 300px;
+      }
+    }
+  </style>
 </head>
 <body>
-    <div id="controls">
-        <label>Origin: <input type="text" id="origin" value="Llanelli" /></label><br>
-        <label>Destination: <input type="text" id="destination" value="Llandeilo" /></label><br>
-        <button id="planRouteBtn">Plan Transit Route</button>
-        <button id="clearMapBtn">Clear Map</button>
-    </div>
-    <div id="loading">Loading routes...</div>
-    <div id="error"></div>
-    <div id="map"></div>
-    <script>
-        // Mapbox token (replace with your own if needed)
-        mapboxgl.accessToken = 'pk.eyJ1IjoiZ2x5bm5pZSIsImEiOiJjbWFyN3o4bXIwNzViMmpyM3pzcHZtb2VpIn0.4jxVARpfk7z-1Tg9vcMhow';
-
-        // Keep track of route layer/source IDs for cleanup
-        let currentRouteIds = [];
-
-        const loadingDiv = document.getElementById('loading');
-        const errorDiv = document.getElementById('error');
-        const planRouteBtn = document.getElementById('planRouteBtn');
-        const clearMapBtn = document.getElementById('clearMapBtn');
-
-        // Initialize map
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/streets-v11',
-            center: [-4.164477, 51.684301],
-            zoom: 10
-        });
-
-        // Helper to clear old route layers/sources
-        function clearRoutesFromMap() {
-            currentRouteIds.forEach(id => {
-                if (map.getLayer(id)) map.removeLayer(id);
-                if (map.getSource(id)) map.removeSource(id);
-            });
-            currentRouteIds = [];
-        }
-
-        // Draw routes on the map
-        function drawRoutesOnMap(routeData) {
-            clearRoutesFromMap();
-            let allCoords = [];
-
-            routeData.routes.forEach((route, routeIdx) => {
-                if (!route.sections) return;
-                route.sections.forEach((section, sectionIdx) => {
-                    if (section.polyline) {
-                        const coords = polyline.decode(section.polyline).map(
-                            ([lat, lng]) => [lng, lat]
-                        );
-                        allCoords.push(...coords);
-
-                        const srcId = `route-${routeIdx}-section-${sectionIdx}`;
-                        const layerId = srcId;
-                        currentRouteIds.push(srcId);
-
-                        map.addSource(srcId, {
-                            type: "geojson",
-                            data: {
-                                type: "Feature",
-                                geometry: {
-                                    type: "LineString",
-                                    coordinates: coords
-                                },
-                                properties: {}
-                            }
-                        });
-
-                        // Color logic
-                        let color = "#000";
-                        if (section.type === "transit" && section.transport && section.transport.color) {
-                            color = section.transport.color;
-                        } else if (section.type === "pedestrian") {
-                            color = "#666";
-                        }
-
-                        map.addLayer({
-                            id: layerId,
-                            type: "line",
-                            source: srcId,
-                            layout: {
-                                "line-join": "round",
-                                "line-cap": "round"
-                            },
-                            paint: {
-                                "line-color": color,
-                                "line-width": 4,
-                                "line-opacity": 0.8
-                            }
-                        });
-                    }
-                });
-            });
-
-            // Fit bounds
-            if (allCoords.length) {
-                const bounds = allCoords.reduce(
-                    (b, coord) => b.extend(coord),
-                    new mapboxgl.LngLatBounds(allCoords[0], allCoords[0])
-                );
-                map.fitBounds(bounds, { padding: 50 });
-            }
-        }
-
-        // Fetch and draw routes
-        function fetchAndDrawRoutes() {
-            loadingDiv.style.display = 'block';
-            errorDiv.style.display = 'none';
-
-            // Get origin/destination from input fields (customize as needed)
-            const origin = document.getElementById('origin').value;
-            const destination = document.getElementById('destination').value;
-
-            // You may need to encode or use these in your API call
-            // This is a placeholder URL - adapt to your actual API
-            const apiUrl = `/api/routes?origin=${encodeURIComponent(origin)}&destination=${encodeURIComponent(destination)}`;
-
-            fetch(apiUrl)
-                .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
-                    return response.json();
-                })
-                .then(routeData => {
-                    loadingDiv.style.display = 'none';
-                    if (!routeData.routes || !routeData.routes.length) {
-                        errorDiv.textContent = 'No routes found.';
-                        errorDiv.style.display = 'block';
-                        clearRoutesFromMap();
-                        return;
-                    }
-                    drawRoutesOnMap(routeData);
-                })
-                .catch(error => {
-                    loadingDiv.style.display = 'none';
-                    errorDiv.textContent = 'Error fetching routes: ' + error.message;
-                    errorDiv.style.display = 'block';
-                    clearRoutesFromMap();
-                });
-        }
-
-        // Button event: plan route
-        planRouteBtn.addEventListener('click', function() {
-            fetchAndDrawRoutes();
-        });
-
-        // Button event: clear map
-        clearMapBtn.addEventListener('click', function() {
-            clearRoutesFromMap();
-            errorDiv.style.display = 'none';
-        });
-
-        // Optionally, fetch routes on page load:
-        // map.on('load', fetchAndDrawRoutes);
-    </script>
+  <header>
+  </header>
+  <div class="iframe-container">
+<iframe src="https://busmaps.com/en/widget/directions?&lang=en" frameborder="0" allowfullscreen="" scrolling="no" width="800" height="500"></iframe><div style="font-size: 14px; line-height: 18px; text-align: right;"><a title="Busmaps.com" href="https://busmaps.com" style="color: #f86433;">All public transport routes on Busmaps.com</a></div>
+  </div>
 </body>
 </html>
